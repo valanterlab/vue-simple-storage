@@ -34,6 +34,9 @@ contract SimpleStorage {
         </div>
         <div class="col-md-7 text-left">
           <h3>Node informations</h3>
+          <p>
+            The Euthereum node url to communicate with.
+          </p>
           <form class="form-horizontal">
             <div class="form-group">
               <label for="nodeUrl" class="col-md-4 control-label text-right">Node url</label>
@@ -42,10 +45,14 @@ contract SimpleStorage {
                   type="text"
                   id="nodeUrl"
                   class="form-control"
-                  value="nodeUrl" v-model="nodeUrl">
+                  value="nodeUrl" v-model="nodeUrl"
+                   @focus="$event.target.select()">
               </div>
             </div>
             <h3>Account</h3>
+            <p>
+              Account addresses used to sign the transaction. The address must have Ether.
+            </p>
             <div class="form-group">
               <div class="form-group">
                 <label for="publicKey" class="col-md-4 control-label text-right">Public Key</label>
@@ -54,7 +61,8 @@ contract SimpleStorage {
                     type="text"
                     id="publicKey"
                     class="form-control"
-                    value="publicKey" v-model="publicKey">
+                    value="publicKey" v-model="publicKey"
+                     @focus="$event.target.select()">
                 </div>
               </div>
               <div class="form-group">
@@ -64,8 +72,11 @@ contract SimpleStorage {
                     type="password"
                     id="privateKey"
                     class="form-control"
-                    value="privateKey" v-model="privateKey">
+                    value="privateKey" v-model="privateKey"
+                     @focus="$event.target.select()">
                 </div>
+              </div>
+              <div class="form-group">
                 <div class="col-md-offset-4 col-md-8">
                   <div class="alert alert-danger" role="alert">Be careful to only send test Private Key</div>
                 </div>
@@ -73,23 +84,29 @@ contract SimpleStorage {
             </div>
           </form>
           <h3>Access the contact</h3>
+          <p>
+            Enter an existing contract address or deploy a new one.
+          </p>
           <form class="form-horizontal">
             <div class="form-group">
-                <label for="contractAddress" class="col-md-3 control-label text-right">Set a contract address</label>
+                <label for="contractAddress" class="col-md-3 control-label text-right">Existing contract address</label>
                 <div class="col-md-6">
                   <input
                     type="text"
                     id="contractAddress"
                     class="form-control"
-                    value="contractAddress" v-model="contractAddress" />
+                    value="contractAddress" v-model="contractAddress"
+                     @focus="$event.target.select()"/>
                 </div>
                 <div class="col-md-1 text-center">
                   Or
                 </div>
                 <div class="col-md-2">
-                  <button type="button"
+                  <button type="button" v-if="deploying == false"
                     class="btn btn-success"
                     @click.prevent="deployContract">Deploy a contact</button>
+
+                    <img  v-if="deploying == true" width="32" src="@/assets/loading.gif" />
                 </div>
             </div>
           </form>
@@ -99,6 +116,9 @@ contract SimpleStorage {
             </div>
           </div>
           <h3>New value in the storage</h3>
+          <p>
+            Interact with the smart contract to set a new storage value.
+          </p>
           <form class="form-horizontal">
             <div class="form-group">
               <label for="storageValue" class="col-md-3 control-label text-right">New storage value</label>
@@ -123,6 +143,9 @@ contract SimpleStorage {
           </div>
           <hr />
           <h3>Get value from the storage</h3>
+          <p>
+            Call the contract to get the current storage value.
+          </p>
           <form class="form-horizontal">
             <div class="form-group">
               <div class="col-md-12 text-center">
@@ -164,7 +187,8 @@ export default {
       storageValue: '',
       retreivedValue: '',
       deployTransactionHash: '',
-      execTransactionHash: ''
+      execTransactionHash: '',
+      deploying: false
     }
   },
   methods: {
@@ -196,6 +220,8 @@ export default {
 
       // Save current this
       let vm = this
+      vm.deploying = true
+      vm.contractAddress = ''
 
       // Estimate gas price
       web3.eth.getGasPrice(function(gasPriceError, result) {
@@ -240,6 +266,7 @@ export default {
               console.log("Raw transaction ready to be sent: ", "0x" + serializedTx.toString('hex'))
 
               // Send signed transaction
+              /*
               web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), function(sendError, transactionHash) {
                 if (sendError) {
                   console.log('sendRawTransaction error : ', sendError)
@@ -249,7 +276,28 @@ export default {
                   console.log('sendRawTransaction success : ', transactionHash)
                   vm.deployTransactionHash = transactionHash
                 }
-              })
+              })*/
+              web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
+                .on('error', function(error){
+                  console.log('sendRawTransaction error : ', error)
+                  vm.deploying = false
+                })
+                .on('transactionHash', function(transactionHash){
+                  console.log('sendRawTransaction success : ', transactionHash)
+                  vm.deployTransactionHash = transactionHash
+                })
+                .on('receipt', function(receipt){
+                  console.log(receipt.contractAddress)
+                  vm.contractAddress = receipt.contractAddress
+                  vm.deploying = false
+                })
+                .on('confirmation', function(confirmationNumber, receipt){
+                  console.log(confirmationNumber)
+                  console.log(receipt)
+                })
+                // .then(function(newContractInstance){
+                //   console.log(newContractInstance) // instance with the new contract address
+                // })
             }
           })
         }
