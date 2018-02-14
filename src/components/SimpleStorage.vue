@@ -10,8 +10,8 @@
 
     <div class="container">
       <div class="row">
-        <div class="col-md-6 text-left">
-          <h3>Simple storage solidity source</h3>
+        <div class="col-md-5 text-left">
+          <h3>SimpleStorage.sol</h3>
           <pre>
 pragma solidity ^0.4.0;
 
@@ -32,8 +32,7 @@ contract SimpleStorage {
           <h3>Bytecode</h3>
           <pre>0x6060604052341561000f57600080fd5b60d38061001d6000396000f3006060604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c14606e575b600080fd5b3415605857600080fd5b606c60048080359060200190919050506094565b005b3415607857600080fd5b607e609e565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582030036eed4617b76ee4550080d2fced7bfbc3ddba9d7b7212901e539bd92c6f5a0029</pre>
         </div>
-
-        <div class="col-md-6">
+        <div class="col-md-7 text-left">
           <h3>Node informations</h3>
           <form class="form-horizontal">
             <div class="form-group">
@@ -45,13 +44,9 @@ contract SimpleStorage {
                   class="form-control"
                   value="nodeUrl" v-model="nodeUrl">
               </div>
-
-              <div class="form-group">
-                <div class="col-md-offset-4 col-md-6">
-                  <div class="alert alert-danger" role="alert">Be careful when sending a testnet Private Key</div>
-                </div>
-              </div>
-
+            </div>
+            <h3>Account</h3>
+            <div class="form-group">
               <div class="form-group">
                 <label for="publicKey" class="col-md-4 control-label text-right">Public Key</label>
                 <div class="col-md-8">
@@ -71,55 +66,65 @@ contract SimpleStorage {
                     class="form-control"
                     value="privateKey" v-model="privateKey">
                 </div>
-              </div>
-
-            </div>
-          </form>
-          <hr />
-          <h3>Deploy the contact</h3>
-          <form class="form-inline">
-            <div class="form-group">
-                <button type="button"
-                  class="btn btn-success"
-                  @click.prevent="deployContract">Deploy a new contact</button>
-
-            </div>
-            <div class="form-group">
-                Or Set a contract address
-            </div>
-            <div class="form-group">
-              <input
-                type="text"
-                id="contractAddress"
-                class="form-control"
-                value="contractAddress" v-model="contractAddress" />
-            </div>
-          </form>
-
-          <hr />
-          <h3>Set a value to the storage</h3>
-          <form class="form-inline">
-                <div class="form-group">
-                  <label for="storageValue" class="col-md-4 text-right">New storage value</label>
-                  <div class="col-md-6">
-                    <input
-                      type="text"
-                      id="storageValue"
-                      class="form-control"
-                      value="storageValue" v-model="storageValue" />
-                  </div>
+                <div class="col-md-offset-4 col-md-8">
+                  <div class="alert alert-danger" role="alert">Be careful to only send test Private Key</div>
                 </div>
-                <div class="form-group text-center">
+              </div>
+            </div>
+          </form>
+          <h3>Access the contact</h3>
+          <form class="form-horizontal">
+            <div class="form-group">
+                <label for="contractAddress" class="col-md-3 control-label text-right">Set a contract address</label>
+                <div class="col-md-6">
+                  <input
+                    type="text"
+                    id="contractAddress"
+                    class="form-control"
+                    value="contractAddress" v-model="contractAddress" />
+                </div>
+                <div class="col-md-1 text-center">
+                  Or
+                </div>
+                <div class="col-md-2">
                   <button type="button"
                     class="btn btn-success"
-                    @click.prevent="setValue">Set Value</button>
+                    @click.prevent="deployContract">Deploy a contact</button>
                 </div>
-
+            </div>
           </form>
+          <div class="row" v-if="deployTransactionHash">
+            <div class="col-md-12 text-center">
+              <div class="alert alert-success" role="alert">{{ deployTransactionHash }}</div>
+            </div>
+          </div>
+          <h3>New value in the storage</h3>
+          <form class="form-horizontal">
+            <div class="form-group">
+              <label for="storageValue" class="col-md-3 control-label text-right">New storage value</label>
+              <div class="col-md-2">
+                <input
+                  type="text"
+                  id="storageValue"
+                  class="form-control"
+                  value="storageValue" v-model="storageValue" />
+              </div>
+              <div class="col-md-2">
+                <button type="button"
+                  class="btn btn-success"
+                  @click.prevent="setValue">Set Value</button>
+              </div>
+            </div>
+          </form>
+          <div class="row" v-if="execTransactionHash">
+            <div class="col-md-12 text-center">
+              <div class="alert alert-success" role="alert">{{ execTransactionHash }}</div>
+            </div>
+          </div>
           <hr />
-          <h3>Get a value from the storage</h3>
-          <form>
-            <div class="row">
+          <h3>Get value from the storage</h3>
+          <form class="form-horizontal">
+            <div class="form-group">
               <div class="col-md-12 text-center">
                 <button type="button"
                   class="btn btn-success"
@@ -128,7 +133,7 @@ contract SimpleStorage {
             </div>
           </form>
           <div class="row" v-if="retreivedValue">
-            <div class="col-md-12">
+            <div class="col-md-12 text-center">
               <div class="alert alert-success" role="alert">{{ retreivedValue }}</div>
             </div>
           </div>
@@ -157,14 +162,15 @@ export default {
       publicKey: '',
       privateKey: '',
       storageValue: '',
-      retreivedValue: ''
+      retreivedValue: '',
+      deployTransactionHash: '',
+      execTransactionHash: ''
     }
   },
   methods: {
     // Deploy contract
     deployContract() {
       console.log('Deploy contract on node: ' + this.nodeUrl + ', for address: ' + this.publicKey)
-
 
       // New web3 instance
       let web3 = new Web3()
@@ -188,8 +194,10 @@ export default {
       // Get payload
       var payload = contractDeploy.encodeABI();
 
+      // Save current this
       let vm = this
 
+      // Estimate gas price
       web3.eth.getGasPrice(function(gasPriceError, result) {
         if (gasPriceError) {
           console.log('Get GasPrice error: ', gasPriceError)
@@ -199,6 +207,7 @@ export default {
           console.log('Get GasPrice success: ', gasPrice)
           var gasPriceHex = web3.utils.numberToHex(gasPrice)
 
+          // Get nonce
           web3.eth.getTransactionCount(vm.publicKey, function(nonceError, nonce) {
             if (nonceError) {
               console.log("Nonce error : ", nonceError)
@@ -230,13 +239,15 @@ export default {
               const serializedTx = tx.serialize();
               console.log("Raw transaction ready to be sent: ", "0x" + serializedTx.toString('hex'))
 
+              // Send signed transaction
               web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), function(sendError, transactionHash) {
                 if (sendError) {
                   console.log('sendRawTransaction error : ', sendError)
                   return
                 }
                 else {
-                  console.log('sendRawTransaction success : ',transactionHash);
+                  console.log('sendRawTransaction success : ', transactionHash)
+                  vm.deployTransactionHash = transactionHash
                 }
               })
             }
@@ -264,8 +275,10 @@ export default {
       var contract = new web3.eth.Contract(abi, this.contractAddress);
       console.log('Contract: ', contract);
 
+      // Save current this
       let vm = this
 
+      // Estimate gas price
       web3.eth.getGasPrice(function(gasPriceError, result) {
         if (gasPriceError) {
           console.log('Get GasPrice error: ', gasPriceError)
@@ -275,6 +288,7 @@ export default {
           console.log('Get GasPrice success: ', gasPrice)
           var gasPriceHex = web3.utils.numberToHex(gasPrice)
 
+          // Get nonce
           web3.eth.getTransactionCount(vm.publicKey, function(nonceError, nonce) {
             if (nonceError) {
               console.log("Nonce error : ", nonceError)
@@ -289,6 +303,7 @@ export default {
               var newValue = parseInt(vm.storageValue)
               var contractCallData = contract.methods.set(newValue)
               console.log('contractCallData : ', contractCallData)
+
               // Get payload
               var payload = contractCallData.encodeABI()
 
@@ -314,13 +329,15 @@ export default {
               const serializedTx = tx.serialize();
               console.log("Raw transaction ready to be sent: ", "0x" + serializedTx.toString('hex'))
 
+              // Send signed transaction
               web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), function(sendError, transactionHash) {
                 if (sendError) {
                   console.log('sendRawTransaction error : ', sendError)
                   return
                 }
                 else {
-                  console.log('sendRawTransaction success : ',transactionHash);
+                  console.log('sendRawTransaction success : ', transactionHash);
+                  vm.execTransactionHash = transactionHash
                 }
               })
             }
