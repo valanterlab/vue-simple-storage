@@ -1,4 +1,4 @@
-# vuesimplestorage
+# VueSimpleStorage
 
 > Simple Storage smart contract interface with Vuejs
 

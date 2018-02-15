@@ -54,32 +54,45 @@ contract SimpleStorage {
               Account addresses used to sign the transaction. The address must have Ether.
             </p>
             <div class="form-group">
-              <div class="form-group">
-                <label for="publicKey" class="col-md-4 control-label text-right">Public Key</label>
-                <div class="col-md-8">
-                  <input
-                    type="text"
-                    id="publicKey"
-                    class="form-control"
-                    value="publicKey" v-model="publicKey"
-                     @focus="$event.target.select()">
-                </div>
+              <label for="address" class="col-md-4 control-label text-right"></label>
+              <div class="col-md-8">
+                <button type="button"
+                  class="btn btn-primary"
+                  @click.prevent="generateAddress">Generate an address</button>
               </div>
-              <div class="form-group">
-                <label for="privateKey" class="col-md-4 control-label text-right">Private Key</label>
-                <div class="col-md-8">
-                  <input
-                    type="password"
-                    id="privateKey"
-                    class="form-control"
-                    value="privateKey" v-model="privateKey"
-                     @focus="$event.target.select()">
-                </div>
+            </div>
+            <div class="form-group">
+              <label for="address" class="col-md-4 control-label text-right">Public Key</label>
+              <div class="col-md-8">
+                <input
+                  type="text"
+                  id="address"
+                  class="form-control"
+                  value="address" v-model="address"
+                  ref="addressField"
+                  @focus="$event.target.select()" @paste="getBalance(address)">
               </div>
-              <div class="form-group">
-                <div class="col-md-offset-4 col-md-8">
-                  <div class="alert alert-danger" role="alert">Be careful to only send test Private Key</div>
-                </div>
+            </div>
+            <div class="form-group">
+              <label for="privateKey" class="col-md-4 control-label text-right">Private Key</label>
+              <div class="col-md-8">
+                <input
+                  type="password"
+                  id="privateKey"
+                  class="form-control"
+                  value="privateKey" v-model="privateKey"
+                   @focus="$event.target.select()">
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-md-offset-4 col-md-8">
+                <div class="alert alert-danger" role="alert">Be careful to only send test Private Key</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="privateKey" class="col-md-4 text-right">Balance</label>
+              <div class="col-md-8">
+                {{ balance }}
               </div>
             </div>
           </form>
@@ -89,24 +102,24 @@ contract SimpleStorage {
           </p>
           <form class="form-horizontal">
             <div class="form-group">
-                <label for="contractAddress" class="col-md-3 control-label text-right">Existing contract address</label>
-                <div class="col-md-6">
-                  <input
-                    type="text"
-                    id="contractAddress"
-                    class="form-control"
-                    value="contractAddress" v-model="contractAddress"
-                     @focus="$event.target.select()"/>
-                </div>
-                <div class="col-md-1 text-center">
-                  Or
-                </div>
-                <div class="col-md-2">
-                  <button type="button" v-if="deploying == false"
-                    class="btn btn-success"
-                    @click.prevent="deployContract">Deploy a contact</button>
-                    <img  v-if="deploying == true" width="32" src="@/assets/loading.gif" />
-                </div>
+              <label for="contractAddress" class="col-md-3 control-label text-right">Existing contract address</label>
+              <div class="col-md-6">
+                <input
+                  type="text"
+                  id="contractAddress"
+                  class="form-control"
+                  value="contractAddress" v-model="contractAddress"
+                   @focus="$event.target.select()"/>
+              </div>
+              <div class="col-md-1 text-center">
+                Or
+              </div>
+              <div class="col-md-2">
+                <button type="button" v-if="deploying == false"
+                  class="btn btn-success"
+                  @click.prevent="deployContract">Deploy a contact</button>
+                  <img  v-if="deploying == true" width="32" src="@/assets/loading.gif" />
+              </div>
             </div>
           </form>
           <div class="row" v-if="deployTransactionHash">
@@ -170,6 +183,7 @@ contract SimpleStorage {
 
 import Web3  from 'web3'
 import Tx from 'ethereumjs-tx'
+import Units from 'ethereumjs-units'
 
 let contractAbi = '[{"constant":false,"inputs":[{"name":"x","type":"uint256"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]'
 let contractBytecode = '0x6060604052341561000f57600080fd5b60d38061001d6000396000f3006060604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c14606e575b600080fd5b3415605857600080fd5b606c60048080359060200190919050506094565b005b3415607857600080fd5b607e609e565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582030036eed4617b76ee4550080d2fced7bfbc3ddba9d7b7212901e539bd92c6f5a0029'
@@ -182,8 +196,9 @@ export default {
       msg: 'Simple Storage Ethereum smart contract interface with Vuejs',
       nodeUrl: 'http://localhost:8545',
       contractAddress: '0x1e29f8f1674da1647e193e7a69767736f947a06a',
-      publicKey: '',
+      address: '',
       privateKey: '',
+      balance: '',
       storageValue: '',
       retreivedValue: '',
       deployTransactionHash: '',
@@ -192,10 +207,48 @@ export default {
       executing: false
     }
   },
+  watch: {
+    address: function(val, oldVal) {
+      // Get balance
+      this.getBalance(val)
+    }
+  },
   methods: {
+    getBalance(address) {
+      // New web3 instance
+      let web3 = new Web3()
+      web3.setProvider(new web3.providers.HttpProvider(this.nodeUrl))
+
+      // Get balance
+      let vm = this
+      web3.eth.getBalance(address)
+      .then(function(balance){
+        console.log('Get balance: ' + balance)
+        balance =  Units.convert(balance, 'wei', 'eth')
+        vm.balance = balance + ' Ether'
+      })
+    },
+    generateAddress() {
+      console.log('Generate address')
+
+      // New web3 instance
+      let web3 = new Web3()
+      web3.setProvider(new web3.providers.HttpProvider(this.nodeUrl))
+
+      // Create account
+      let account = web3.eth.accounts.create();
+      console.log(account)
+
+      // Set account info
+      this.address = account.address
+      this.privateKey = account.privateKey
+
+      // Get balance
+      this.getBalance(account.address)
+    },
     // Deploy contract
     deployContract() {
-      console.log('Deploy contract on node: ' + this.nodeUrl + ', for address: ' + this.publicKey)
+      console.log('Deploy contract on node: ' + this.nodeUrl + ', for address: ' + this.address)
 
       // New web3 instance
       let web3 = new Web3()
@@ -236,7 +289,7 @@ export default {
           var gasPriceHex = web3.utils.numberToHex(gasPrice)
 
           // Get nonce
-          web3.eth.getTransactionCount(vm.publicKey, function(nonceError, nonce) {
+          web3.eth.getTransactionCount(vm.address, function(nonceError, nonce) {
             if (nonceError) {
               console.log("Nonce error : ", nonceError)
               vm.deploying = false
@@ -256,7 +309,7 @@ export default {
                 gasPrice: gasPriceHex,
                 gasLimit: gasLimitHex,
                 value: '0x00',
-                from: vm.publicKey,
+                from: vm.address,
                 data: payload
               }
               console.log("Raw Transaction: ",rawTx)
@@ -331,7 +384,7 @@ export default {
           var gasPriceHex = web3.utils.numberToHex(gasPrice)
 
           // Get nonce
-          web3.eth.getTransactionCount(vm.publicKey, function(nonceError, nonce) {
+          web3.eth.getTransactionCount(vm.address, function(nonceError, nonce) {
             if (nonceError) {
               console.log("Nonce error : ", nonceError)
               vm.executing = false
@@ -359,7 +412,7 @@ export default {
                 gasPrice: gasPriceHex,
                 gasLimit: gasLimitHex,
                 value: '0x00',
-                from: vm.publicKey,
+                from: vm.address,
                 to: vm.contractAddress,
                 data: payload
               }
