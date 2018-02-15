@@ -51,7 +51,8 @@ contract SimpleStorage {
             </div>
             <h3>Account</h3>
             <p>
-              Account addresses used to sign the transaction. The address must have Ether.
+              Account addresses are used to sign the transaction.<br />
+              The account must have Ether to deploy the contract and set the value.
             </p>
             <div class="form-group">
               <label for="address" class="col-md-4 control-label text-right"></label>
