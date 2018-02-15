@@ -105,14 +105,13 @@ contract SimpleStorage {
                   <button type="button" v-if="deploying == false"
                     class="btn btn-success"
                     @click.prevent="deployContract">Deploy a contact</button>
-
                     <img  v-if="deploying == true" width="32" src="@/assets/loading.gif" />
                 </div>
             </div>
           </form>
           <div class="row" v-if="deployTransactionHash">
             <div class="col-md-12 text-center">
-              <div class="alert alert-success" role="alert">{{ deployTransactionHash }}</div>
+              <div class="alert alert-success" role="alert"><strong>Txhash:</strong> {{ deployTransactionHash }}</div>
             </div>
           </div>
           <h3>New value in the storage</h3>
@@ -130,15 +129,16 @@ contract SimpleStorage {
                   value="storageValue" v-model="storageValue" />
               </div>
               <div class="col-md-2">
-                <button type="button"
+                <button type="button" v-if="executing == false"
                   class="btn btn-success"
                   @click.prevent="setValue">Set Value</button>
+                  <img  v-if="executing == true" width="32" src="@/assets/loading.gif" />
               </div>
             </div>
           </form>
           <div class="row" v-if="execTransactionHash">
             <div class="col-md-12 text-center">
-              <div class="alert alert-success" role="alert">{{ execTransactionHash }}</div>
+              <div class="alert alert-success" role="alert"><strong>Txhash:</strong> {{ execTransactionHash }}</div>
             </div>
           </div>
           <hr />
@@ -188,7 +188,8 @@ export default {
       retreivedValue: '',
       deployTransactionHash: '',
       execTransactionHash: '',
-      deploying: false
+      deploying: false,
+      executing: false
     }
   },
   methods: {
@@ -227,6 +228,7 @@ export default {
       web3.eth.getGasPrice(function(gasPriceError, result) {
         if (gasPriceError) {
           console.log('Get GasPrice error: ', gasPriceError)
+          vm.deploying = false
           return
         } else{
           var gasPrice = result;
@@ -237,6 +239,7 @@ export default {
           web3.eth.getTransactionCount(vm.publicKey, function(nonceError, nonce) {
             if (nonceError) {
               console.log("Nonce error : ", nonceError)
+              vm.deploying = false
               return
             }
             else {
@@ -266,17 +269,6 @@ export default {
               console.log("Raw transaction ready to be sent: ", "0x" + serializedTx.toString('hex'))
 
               // Send signed transaction
-              /*
-              web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), function(sendError, transactionHash) {
-                if (sendError) {
-                  console.log('sendRawTransaction error : ', sendError)
-                  return
-                }
-                else {
-                  console.log('sendRawTransaction success : ', transactionHash)
-                  vm.deployTransactionHash = transactionHash
-                }
-              })*/
               web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
                 .on('error', function(error){
                   console.log('sendRawTransaction error : ', error)
@@ -325,11 +317,13 @@ export default {
 
       // Save current this
       let vm = this
+      vm.executing = true
 
       // Estimate gas price
       web3.eth.getGasPrice(function(gasPriceError, result) {
         if (gasPriceError) {
           console.log('Get GasPrice error: ', gasPriceError)
+          vm.executing = false
           return
         } else{
           var gasPrice = result;
@@ -340,6 +334,7 @@ export default {
           web3.eth.getTransactionCount(vm.publicKey, function(nonceError, nonce) {
             if (nonceError) {
               console.log("Nonce error : ", nonceError)
+              vm.executing = false
               return
             }
             else {
@@ -378,16 +373,27 @@ export default {
               console.log("Raw transaction ready to be sent: ", "0x" + serializedTx.toString('hex'))
 
               // Send signed transaction
-              web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), function(sendError, transactionHash) {
-                if (sendError) {
-                  console.log('sendRawTransaction error : ', sendError)
-                  return
-                }
-                else {
-                  console.log('sendRawTransaction success : ', transactionHash);
+              web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
+                .on('error', function(error){
+                  console.log('sendRawTransaction error : ', error)
+                  vm.executing = false
+                })
+                .on('transactionHash', function(transactionHash){
+                  console.log('sendRawTransaction success : ', transactionHash)
                   vm.execTransactionHash = transactionHash
-                }
-              })
+                })
+                .on('receipt', function(receipt){
+                  console.log(receipt)
+                  vm.contractAddress = receipt.contractAddress
+                  vm.executing = false
+                })
+                .on('confirmation', function(confirmationNumber, receipt){
+                  console.log(confirmationNumber)
+                  console.log(receipt)
+                })
+                // .then(function(newContractInstance){
+                //   console.log(newContractInstance) // instance with the new contract address
+                // })
             }
           })
         }
@@ -401,10 +407,9 @@ export default {
       let web3 = new Web3()
       web3.setProvider(new web3.providers.HttpProvider(this.nodeUrl));
 
-      let contractAddress = "0x1e29f8f1674da1647e193e7a69767736f947a06a"
       var abi = JSON.parse(contractAbi)
       // Exec contract
-      var contract = new web3.eth.Contract(abi, contractAddress)
+      var contract = new web3.eth.Contract(abi, this.contractAddress)
       console.log('start call get')
       let vm = this;
       contract.methods.get().call().then(
