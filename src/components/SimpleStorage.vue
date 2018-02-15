@@ -188,6 +188,8 @@ import Units from 'ethereumjs-units'
 let contractAbi = '[{"constant":false,"inputs":[{"name":"x","type":"uint256"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]'
 let contractBytecode = '0x6060604052341561000f57600080fd5b60d38061001d6000396000f3006060604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c14606e575b600080fd5b3415605857600080fd5b606c60048080359060200190919050506094565b005b3415607857600080fd5b607e609e565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582030036eed4617b76ee4550080d2fced7bfbc3ddba9d7b7212901e539bd92c6f5a0029'
 
+let web3 = new Web3()
+
 export default {
   name: 'VueSimpleStorage',
   data () {
@@ -214,26 +216,35 @@ export default {
     }
   },
   methods: {
-    getBalance(address) {
-      // New web3 instance
-      let web3 = new Web3()
+    // Dial node
+    dialNode() {
+      // Get provider
       web3.setProvider(new web3.providers.HttpProvider(this.nodeUrl))
+    },
+    // Get balance
+    getBalance(address) {
+      if (web3.utils.isAddress(address)) {
+        // Dial node
+        this.dialNode()
 
-      // Get balance
-      let vm = this
-      web3.eth.getBalance(address)
-      .then(function(balance){
-        console.log('Get balance: ' + balance)
-        balance =  Units.convert(balance, 'wei', 'eth')
-        vm.balance = balance + ' Ether'
-      })
+        // Get balance
+        let vm = this
+        web3.eth.getBalance(address)
+        .then(function(balance){
+          console.log('Get balance: ' + balance)
+          balance =  Units.convert(balance, 'wei', 'eth')
+          vm.balance = balance + ' Ether'
+        })
+      } else {
+        console.log('Address not valid')
+        return
+      }
     },
     generateAddress() {
       console.log('Generate address')
 
-      // New web3 instance
-      let web3 = new Web3()
-      web3.setProvider(new web3.providers.HttpProvider(this.nodeUrl))
+      // Dial node
+      this.dialNode()
 
       // Create account
       let account = web3.eth.accounts.create();
@@ -250,9 +261,8 @@ export default {
     deployContract() {
       console.log('Deploy contract on node: ' + this.nodeUrl + ', for address: ' + this.address)
 
-      // New web3 instance
-      let web3 = new Web3()
-      web3.setProvider(new web3.providers.HttpProvider(this.nodeUrl));
+      // Dial node
+      this.dialNode()
 
       // Get keys
       var privateKey = new Buffer(this.privateKey, 'hex')
@@ -352,9 +362,8 @@ export default {
     setValue() {
       console.log('Set value:' + this.storageValue + ' to contract: ' + this.contractAddress + ' on node: ' + this.nodeUrl)
 
-      // New web3 instance
-      let web3 = new Web3()
-      web3.setProvider(new web3.providers.HttpProvider(this.nodeUrl));
+      // Dial node
+      this.dialNode()
 
       // Get keys
       var privateKey = new Buffer(this.privateKey, 'hex')
@@ -365,7 +374,7 @@ export default {
 
       var abi = JSON.parse(contractAbi)
       // Exec contract
-      var contract = new web3.eth.Contract(abi, this.contractAddress);
+      var contract = new web3.eth.Contract(abi, this.contractAddress)
       console.log('Contract: ', contract);
 
       // Save current this
@@ -456,9 +465,8 @@ export default {
     getValue() {
       console.log('Get contract value')
 
-      // New web3 instance
-      let web3 = new Web3()
-      web3.setProvider(new web3.providers.HttpProvider(this.nodeUrl));
+      // Dial node
+      this.dialNode()
 
       var abi = JSON.parse(contractAbi)
       // Exec contract
