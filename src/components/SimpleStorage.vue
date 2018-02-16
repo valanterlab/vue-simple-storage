@@ -82,8 +82,25 @@ contract SimpleStorage {
                   id="privateKey"
                   class="form-control"
                   value="privateKey" v-model="privateKey"
+                  v-show="!showPass"
                    @focus="$event.target.select()">
+                 <input
+                   type="text"
+                   id="privateKey"
+                   class="form-control"
+                   value="privateKey" v-model="privateKey"
+                   v-show="showPass"
+                    @focus="$event.target.select()">
               </div>
+              <div class="col-md-12 text-right">
+                 <button type="button"
+                   class="btn btn-default"
+                   @click.prevent="showPass = !showPass">
+                   <span class="glyphicon glyphicon-eye-open" v-show="!showPass" aria-hidden=true></span>
+                   <span class="glyphicon glyphicon-eye-close" v-show="showPass" aria-hidden=true></span>
+                 </button>
+              </div>
+
             </div>
             <div class="form-group">
               <div class="col-md-offset-4 col-md-8">
@@ -207,7 +224,8 @@ export default {
       deployTransactionHash: '',
       execTransactionHash: '',
       deploying: false,
-      executing: false
+      executing: false,
+      showPass: false
     }
   },
   watch: {
