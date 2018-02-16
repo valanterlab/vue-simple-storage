@@ -59,7 +59,7 @@ contract SimpleStorage {
               <div class="col-md-8">
                 <button type="button"
                   class="btn btn-primary"
-                  @click.prevent="generateAddress">Generate an address</button>
+                  @click.prevent="createAccount">Create an account</button>
               </div>
             </div>
             <div class="form-group">
@@ -241,8 +241,8 @@ export default {
         return
       }
     },
-    generateAddress() {
-      console.log('Generate address')
+    createAccount() {
+      console.log('Create account')
 
       // Dial node
       this.dialNode()
