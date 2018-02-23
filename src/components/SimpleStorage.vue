@@ -1,5 +1,4 @@
-<template>
-  <div>
+<!-- <template> -->
     <div class="jumbotron">
       <h1>{{ title }}</h1>
       <p>{{ msg }}</p>
@@ -218,8 +217,7 @@ export default {
       title: 'VueSimpleStorage',
       msg: 'Simple Storage Ethereum smart contract interface with Vuejs',
       contractSource: contractSource,
-      // nodeUrl: 'http://localhost:8545',
-      nodeUrl: 'https://ropsten.infura.io/78ug1ovJZrudvaEsb3UV',
+      nodeUrl: 'http://localhost:8545',
       contractAddress: '0x1e29f8f1674da1647e193e7a69767736f947a06a',
       address: '',
       privateKey: '',
