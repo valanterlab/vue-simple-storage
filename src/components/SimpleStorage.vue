@@ -13,19 +13,7 @@
         <div class="col-md-5 text-left">
           <h3>SimpleStorage.sol</h3>
           <pre>
-pragma solidity ^0.4.0;
-
-contract SimpleStorage {
-    uint storedData;
-
-    function set(uint x) public {
-        storedData = x;
-    }
-
-    function get() public constant returns (uint) {
-        return storedData;
-    }
-}
+{{ contractSource }}
           </pre>
           <h3>Abi</h3>
           <pre>[{"constant":false,"inputs":[{"name":"x","type":"uint256"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]</pre>
@@ -63,20 +51,8 @@ contract SimpleStorage {
               </div>
             </div>
             <div class="form-group">
-              <label for="address" class="col-md-4 control-label text-right">Public Key</label>
-              <div class="col-md-8">
-                <input
-                  type="text"
-                  id="address"
-                  class="form-control"
-                  value="address" v-model="address"
-                  ref="addressField"
-                  @focus="$event.target.select()" @paste="getBalance(address)">
-              </div>
-            </div>
-            <div class="form-group">
               <label for="privateKey" class="col-md-4 control-label text-right">Private Key</label>
-              <div class="col-md-8">
+              <div class="col-md-7">
                 <input
                   type="password"
                   id="privateKey"
@@ -92,7 +68,7 @@ contract SimpleStorage {
                    v-show="showPass"
                     @focus="$event.target.select()">
               </div>
-              <div class="col-md-12 text-right">
+              <div class="col-md-1 text-right">
                  <button type="button"
                    class="btn btn-default"
                    @click.prevent="showPass = !showPass">
@@ -100,8 +76,20 @@ contract SimpleStorage {
                    <span class="glyphicon glyphicon-eye-close" v-show="showPass" aria-hidden=true></span>
                  </button>
               </div>
-
             </div>
+            <div class="form-group">
+              <label for="address" class="col-md-4 control-label text-right">Public Key</label>
+              <div class="col-md-7">
+                <input
+                  type="text"
+                  id="address"
+                  class="form-control"
+                  value="address" v-model="address"
+                  ref="addressField"
+                  @focus="$event.target.select()" @paste="getBalance(address)">
+              </div>
+            </div>
+
             <div class="form-group">
               <div class="col-md-offset-4 col-md-8">
                 <div class="alert alert-danger" role="alert">Be careful to only send test Private Key</div>
@@ -199,12 +187,27 @@ contract SimpleStorage {
 
 <script>
 
+// var solc = require('solc')
 import Web3  from 'web3'
 import Tx from 'ethereumjs-tx'
 import Units from 'ethereumjs-units'
 
 let contractAbi = '[{"constant":false,"inputs":[{"name":"x","type":"uint256"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]'
 let contractBytecode = '0x6060604052341561000f57600080fd5b60d38061001d6000396000f3006060604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c14606e575b600080fd5b3415605857600080fd5b606c60048080359060200190919050506094565b005b3415607857600080fd5b607e609e565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582030036eed4617b76ee4550080d2fced7bfbc3ddba9d7b7212901e539bd92c6f5a0029'
+
+let contractSource = `pragma solidity ^0.4.0;
+
+contract SimpleStorage {
+    uint storedData;
+
+    function set(uint x) public {
+        storedData = x;
+    }
+
+    function get() public constant returns (uint) {
+        return storedData;
+    }
+}`
 
 let web3 = new Web3()
 
@@ -214,7 +217,9 @@ export default {
     return {
       title: 'VueSimpleStorage',
       msg: 'Simple Storage Ethereum smart contract interface with Vuejs',
-      nodeUrl: 'http://localhost:8545',
+      contractSource: contractSource,
+      // nodeUrl: 'http://localhost:8545',
+      nodeUrl: 'https://ropsten.infura.io/78ug1ovJZrudvaEsb3UV',
       contractAddress: '0x1e29f8f1674da1647e193e7a69767736f947a06a',
       address: '',
       privateKey: '',
@@ -232,6 +237,16 @@ export default {
     address: function(val, oldVal) {
       // Get balance
       this.getBalance(val)
+    },
+    privateKey: function(val, oldVal) {
+      // Force 0x addresses
+      var regex1 = /(0x)/;
+      if (regex1.test(val) == false) {
+        val = '0x' + val
+      }
+      // Extract account
+      let account = web3.eth.accounts.privateKeyToAccount(val);
+      this.address = account.address
     }
   },
   methods: {
