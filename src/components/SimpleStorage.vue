@@ -1,4 +1,5 @@
-<!-- <template> -->
+<template>
+  <div>
     <div class="jumbotron">
       <h1>{{ title }}</h1>
       <p>{{ msg }}</p>
