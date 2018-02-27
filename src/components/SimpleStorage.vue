@@ -252,7 +252,7 @@ export default {
     // Dial node
     dialNode() {
       // Get provider
-      web3.setProvider(new web3.providers.HttpProvider(this.nodeUrl))
+      web3.setProvider(this.nodeUrl)
     },
     // Get balance
     getBalance(address) {
@@ -261,12 +261,12 @@ export default {
         this.dialNode()
 
         // Get balance
-        let vm = this
+        let self = this
         web3.eth.getBalance(address)
         .then(function(balance){
           console.log('Get balance: ' + balance)
           balance =  Units.convert(balance, 'wei', 'eth')
-          vm.balance = balance + ' Ether'
+          self.balance = balance + ' Ether'
         })
       } else {
         console.log('Address not valid')
@@ -316,15 +316,15 @@ export default {
       var payload = contractDeploy.encodeABI();
 
       // Save current this
-      let vm = this
-      vm.deploying = true
-      vm.contractAddress = ''
+      let self = this
+      self.deploying = true
+      self.contractAddress = ''
 
       // Estimate gas price
       web3.eth.getGasPrice(function(gasPriceError, result) {
         if (gasPriceError) {
           console.log('Get GasPrice error: ', gasPriceError)
-          vm.deploying = false
+          self.deploying = false
           return
         } else{
           var gasPrice = result;
@@ -332,10 +332,10 @@ export default {
           var gasPriceHex = web3.utils.numberToHex(gasPrice)
 
           // Get nonce
-          web3.eth.getTransactionCount(vm.address, function(nonceError, nonce) {
+          web3.eth.getTransactionCount(self.address, function(nonceError, nonce) {
             if (nonceError) {
               console.log("Nonce error : ", nonceError)
-              vm.deploying = false
+              self.deploying = false
               return
             }
             else {
@@ -352,7 +352,7 @@ export default {
                 gasPrice: gasPriceHex,
                 gasLimit: gasLimitHex,
                 value: '0x00',
-                from: vm.address,
+                from: self.address,
                 data: payload
               }
               console.log("Raw Transaction: ",rawTx)
@@ -368,16 +368,16 @@ export default {
               web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
                 .on('error', function(error){
                   console.log('sendRawTransaction error : ', error)
-                  vm.deploying = false
+                  self.deploying = false
                 })
                 .on('transactionHash', function(transactionHash){
                   console.log('sendRawTransaction success : ', transactionHash)
-                  vm.deployTransactionHash = transactionHash
+                  self.deployTransactionHash = transactionHash
                 })
                 .on('receipt', function(receipt){
                   console.log(receipt.contractAddress)
-                  vm.contractAddress = receipt.contractAddress
-                  vm.deploying = false
+                  self.contractAddress = receipt.contractAddress
+                  self.deploying = false
                 })
                 .on('confirmation', function(confirmationNumber, receipt){
                   console.log(confirmationNumber)
@@ -411,14 +411,14 @@ export default {
       console.log('Contract: ', contract);
 
       // Save current this
-      let vm = this
-      vm.executing = true
+      let self = this
+      self.executing = true
 
       // Estimate gas price
       web3.eth.getGasPrice(function(gasPriceError, result) {
         if (gasPriceError) {
           console.log('Get GasPrice error: ', gasPriceError)
-          vm.executing = false
+          self.executing = false
           return
         } else{
           var gasPrice = result;
@@ -426,10 +426,10 @@ export default {
           var gasPriceHex = web3.utils.numberToHex(gasPrice)
 
           // Get nonce
-          web3.eth.getTransactionCount(vm.address, function(nonceError, nonce) {
+          web3.eth.getTransactionCount(self.address, function(nonceError, nonce) {
             if (nonceError) {
               console.log("Nonce error : ", nonceError)
-              vm.executing = false
+              self.executing = false
               return
             }
             else {
@@ -438,7 +438,7 @@ export default {
               console.log("Nonce hex : ", nonce)
 
               // Execute the smart contract method
-              var newValue = parseInt(vm.storageValue)
+              var newValue = parseInt(self.storageValue)
               var contractCallData = contract.methods.set(newValue)
               console.log('contractCallData : ', contractCallData)
 
@@ -454,8 +454,8 @@ export default {
                 gasPrice: gasPriceHex,
                 gasLimit: gasLimitHex,
                 value: '0x00',
-                from: vm.address,
-                to: vm.contractAddress,
+                from: self.address,
+                to: self.contractAddress,
                 data: payload
               }
               console.log("Raw Transaction: ",rawTx)
@@ -471,15 +471,15 @@ export default {
               web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
                 .on('error', function(error){
                   console.log('sendRawTransaction error : ', error)
-                  vm.executing = false
+                  self.executing = false
                 })
                 .on('transactionHash', function(transactionHash){
                   console.log('sendRawTransaction success : ', transactionHash)
-                  vm.execTransactionHash = transactionHash
+                  self.execTransactionHash = transactionHash
                 })
                 .on('receipt', function(receipt){
                   console.log(receipt)
-                  vm.executing = false
+                  self.executing = false
                 })
                 .on('confirmation', function(confirmationNumber, receipt){
                   console.log(confirmationNumber)
@@ -504,11 +504,11 @@ export default {
       // Exec contract
       var contract = new web3.eth.Contract(abi, this.contractAddress)
       console.log('start call get')
-      let vm = this;
+      let self = this;
       contract.methods.get().call().then(
         function (result) {
           console.log('Result: ' + result)
-          vm.retreivedValue = result
+          self.retreivedValue = result
         })
     }
   }
