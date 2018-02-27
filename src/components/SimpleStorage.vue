@@ -479,7 +479,6 @@ export default {
                 })
                 .on('receipt', function(receipt){
                   console.log(receipt)
-                  vm.contractAddress = receipt.contractAddress
                   vm.executing = false
                 })
                 .on('confirmation', function(confirmationNumber, receipt){
